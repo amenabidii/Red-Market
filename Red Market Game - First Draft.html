@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Red Market - Dark Edition</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    /* --- Button Hover Styles --- */
+
+    /* Primary Choice / Next Button */
+    .btn-primary {
+      transition: all 0.2s ease;
+    }
+    .btn-primary:hover {
+      background-color: #4f46e5; /* Darker Indigo */
+      border-color: #c7d2fe; /* Lighter Indigo Border */
+    }
+
+    /* Start Button */
+    #start-button:hover {
+      background-color: #ec4899; /* Pink-500 */
+    }
+
+    /* Back Button */
+    #back-button:hover {
+      background-color: #a78bfa; /* Violet-400 */
+    }
+
+    /* Restart Button */
+    #restart-btn:hover {
+      background-color: #f87171; /* Red-400 */
+    }
+
+    /* Music Toggle Button */
+    #music-toggle:hover {
+      background-color: #34d399; /* Emerald-400 */
+    }
+    /* --- End of Hover Styles --- */
+
+    /* --- Confetti Animation Styles --- */
+    #confetti-container {
+      /* This is a new container for the animation */
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 50;
+    }
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      opacity: 0;
+      /* Animation will last 10 seconds, as requested */
+      animation: confetti-fall 10s linear;
+    }
+
+    @keyframes confetti-fall {
+      0% {
+        transform: translateY(-100px) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(110vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+    /* --- End of Confetti Styles --- */
+
+    /* --- Rain Animation Styles (NEW) --- */
+    #rain-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 49;
+    }
+    .rain-drop {
+      position: absolute;
+      width: 2px;
+      height: 15px;
+      background-color: #60a5fa; /* blue-400 */
+      opacity: 0;
+      animation: rain-fall 10s linear;
+    }
+
+    @keyframes rain-fall {
+      0% {
+        transform: translateY(-100px);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(110vh);
+        opacity: 0;
+      }
+    }
+    /* --- End of Rain Styles --- */
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-100 flex items-center justify-center min-h-screen p-4 md:p-8 transition-all duration-500 ease-in-out">
+  
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 w-full max-w-7xl">
+    
+    <!-- === LEFT SIDEBAR === -->
+    <aside class="md:col-span-1 bg-gray-800 p-6 rounded-2xl shadow-lg">
+      <h2 class="text-2xl font-bold mb-6 text-pink-400">Red Market</h2>
+      
+      <!-- STATS -->
+      <div class="space-y-6 mb-6">
+        <div>
+          <label class="text-sm font-medium text-gray-400">Cash on Hand</label>
+          <div id="cash-text" class="text-4xl font-extrabold text-gray-300">$400</div>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-400">Crypto Wallet</label>
+          <div id="crypto-text" class="text-4xl font-extrabold text-green-400">$0</div>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-400">Stress Level</label>
+          <div id="stress-text" class="text-4xl font-bold text-blue-400 flex items-center">
+            <span id="stress-emoji" class="text-5xl mr-2">🤔</span>
+            <span id="stress-label">Curious</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTROLS -->
+      <div class="space-y-3 mb-6">
+        <button id="music-toggle" class="w-full bg-emerald-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all duration-200 ease-in-out">
+          Play Theme
+        </button>
+        <button id="back-button" class="w-full bg-violet-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all duration-200 ease-in-out">
+          Go Back
+        </button>
+        <button id="restart-btn" class="w-full bg-red-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all duration-200 ease-in-out">
+          Restart
+        </button>
+      </div>
+
+      <!-- HISTORY -->
+      <div>
+        <h3 class="font-semibold text-lg mb-2 text-gray-300">History</h3>
+        <div id="history-list" class="h-40 overflow-y-auto space-y-2 p-2 bg-gray-900 rounded-md">
+          <!-- History items added here -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- === MAIN CARD === -->
+    <main id="main-card" class="md:col-span-2 bg-gray-800 p-8 rounded-2xl shadow-lg flex flex-col items-center justify-center min-h-[600px]">
+      
+      <!-- Intro Screen -->
+      <div id="intro-screen" class="text-center">
+        <h1 class="text-4xl font-bold text-pink-400 mb-4">This is my true story.</h1>
+        <p class="text-lg text-gray-300 mb-8 max-w-lg">
+          In 2020, I thought I would get rich from crypto. I ended up losing $400 - all the money I had from selling my phone. This is a simulation of that emotional rollercoaster.
+        </p>
+        <button id="start-button" class="bg-pink-600 text-white font-bold py-3 px-8 text-xl rounded-lg shadow-lg transition-all duration-200 ease-in-out">
+          Are You Ready? Press Start
+        </button>
+      </div>
+
+      <!-- Scenario Screen (Hidden by default) -->
+      <div id="scenario-screen" class="hidden w-full h-full flex flex-col">
+        <div id="scenario-content" class="flex-grow flex flex-col items-center justify-center text-center">
+          <p id="scenario-text" class="text-2xl font-medium text-gray-200 leading-relaxed mb-8">
+            <!-- Scenario text goes here -->
+          </p>
+          <div id="choices-container" class="w-full max-w-md space-y-4">
+            <!-- Choices go here -->
+          </div>
+          <!-- "Next" button container (for outcome screens) -->
+          <div id="next-button-container" class="hidden w-full max-w-md space-y-4 mt-8">
+             <button id="next-button" class="btn-primary w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg border-2 border-transparent">
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- === RIGHT SIDEBAR (NEWS) === -->
+    <aside class="md:col-span-1 bg-gray-800 p-6 rounded-2xl shadow-lg">
+      <h2 class="text-2xl font-bold mb-6 text-pink-400">Social / News Feed</h2>
+      <div id="comments-feed" class="h-[560px] overflow-y-auto space-y-4">
+        <div class="p-4 bg-gray-700 rounded-lg">
+          <p class="font-semibold text-sm text-pink-300">@WelcomeBot</p>
+          <p class="text-sm text-gray-300">The world is buzzing. What will you do?</p>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- Confetti Container (New) -->
+  <div id="confetti-container"></div>
+  
+  <!-- Rain Container (NEW) -->
+  <div id="rain-container"></div>
+
+  <!-- Audio element, with a reliable link -->
+  <audio id="bg-audio" loop src="https://storage.googleapis.com/b_stra.appspot.com/public/clean-background-music-8919.mp3"></audio>
+
+  <!-- 
+    ================================================================
+    === GAME ENGINE JAVASCRIPT ===
+    This is the complete, working engine.
+    ================================================================
+  -->
+  <script>
+    // --- 1. GET ALL HTML ELEMENTS ---
+    const startButton = document.getElementById('start-button');
+    const introScreen = document.getElementById('intro-screen');
+    const scenarioScreen = document.getElementById('scenario-screen');
+    const mainCard = document.getElementById('main-card');
+    
+    const cashText = document.getElementById('cash-text'); // NEW
+    const cryptoText = document.getElementById('crypto-text'); // RENAMED
+    const stressLabel = document.getElementById('stress-label');
+    const stressEmoji = document.getElementById('stress-emoji');
+    
+    const scenarioText = document.getElementById('scenario-text');
+    const choicesContainer = document.getElementById('choices-container');
+    const nextButtonContainer = document.getElementById('next-button-container');
+    const nextButton = document.getElementById('next-button');
+    
+    const commentsFeed = document.getElementById('comments-feed');
+    const historyList = document.getElementById('history-list');
+
+    const musicToggle = document.getElementById('music-toggle');
+    const backButton = document.getElementById('back-button');
+    const restartBtn = document.getElementById('restart-btn');
+    const bgAudio = document.getElementById('bg-audio');
+
+    // --- 2. DEFINE GAME STATE ---
+    let state = { 
+      cash: 400, 
+      crypto: 0, 
+      stress:"Curious", 
+      currentScenarioId: 0, 
+      history:[] 
+    };
+    let musicPlaying = false; 
+
+    // --- 3. DEFINE STRESS MAP ---
+    const stressMap = {
+      "Curious": { emoji: "🤔", color: "#60a5fa" }, // blue-400
+      "Cautious": { emoji: "🧐", color: "#93c5fd" }, // blue-300
+      "Nervous": { emoji: "😬", color: "#fcd34d" }, // yellow-300
+      "FOMO": { emoji: "😟", color: "#facc15" }, // yellow-400
+      "Stressed": { emoji: "😫", color: "#f59e0b" }, // amber-500
+      "Excited!": { emoji: "🤩", color: "#4ade80" }, // green-400
+      "Panicked!": { emoji: "😱", color: "#f87171" }, // red-400
+      "Empty": { emoji: "😑", color: "#9ca3af" }, // gray-400
+      "Defeated": { emoji: "😭", color: "#ef4444" }, // red-500
+      "Stable": { emoji: "😌", color: "#a78bfa" } // violet-400
+    };
+
+    // --- 4. DEFINE ALL GAME SCENARIOS ---
+    const gameScenarios = {
+      // START
+      1: { 
+        text: "It's 2020. You just sold your old phone. You have $400. Your friend texts you, \"Dude, you HAVE to get in on 'CryptoCoin X'. I just made $200!\"",
+        feed: [{ user: "@CryptoKing", text: "'CryptoCoin X' is the future! #ToTheMoon" }],
+        choices: [
+          { text: "Okay, fine. Put in $100. Let's see.", outcome: "You send $100. Still got $300 safe. Smart.", nextScenarioId: 2 },
+          { text: "You're right. This is our chance. Put all $400 in.", outcome: "You're all in. Nervous, but excited.", nextScenarioId: 3 },
+          { text: "No way. That sounds like a scam.", outcome: "You decide to wait and see. Your money is safe... for now.", nextScenarioId: 4 }
+        ]
+      },
+
+      // SCENARIO 2 (from 1A)
+      2: { 
+        text: "You put $100 in. You feel okay—you still have $300 safe. The next day, the market is up 10%! Your $100 is now $110.",
+        set_cash: 300,
+        set_crypto: 110,
+        set_stress: "Cautious",
+        feed: [{ user: "Your Friend", text: "Told you it was easy money!" }],
+        choices: [
+          { text: "See? It works! Put the other $300 in.", outcome: "You're all in now. Your total investment is $400.", nextScenarioId: 3 },
+          { text: "Nice. Let's just hold for now.", outcome: "You'll just watch your $110 for a while. No need to be greedy.", nextScenarioId: 5 }
+        ]
+      },
+      
+      // SCENARIO 3 (from 1B or 2A)
+      3: { 
+        text: "You're all in with $400. You're nervous but excited. A week later, the market is booming. Your $400 is now worth $750! You feel like a genius.",
+        set_cash: 0,
+        set_crypto: 750,
+        set_stress: "Excited!",
+        feed: [{ user: "@TikTok_Invest", text: "If you're not in 'CryptoCoin X', you're missing out!" }],
+        choices: [
+          { text: "Sell! Take the $750 profit and walk away.", outcome: "You cash out! $350 profit. Easy.", nextScenarioId: 6 },
+          { text: "Hold! It's going to $10,000. 'Diamond hands'!", outcome: "Why stop now? You're holding on for more.", nextScenarioId: 7 },
+          { text: "A friend needs to borrow $200. I can spare it.", outcome: "You're feeling generous. You send him $200.", nextScenarioId: 10 }
+        ]
+      },
+
+      // SCENARIO 4 (from 1C)
+      4: { 
+        text: "You decide not to invest. A month later, your friend texts you a screenshot. His investment doubled. 'You're missing out, man! It's still early!' This is FOMO (Fear Of Missing Out).",
+        set_cash: 400,
+        set_crypto: 0,
+        set_stress: "FOMO",
+        feed: [{ user: "Your Friend", text: "My $100 is $200 now! You suuure you don't want in?" }],
+        choices: [
+          { text: "Ugh, fine! I'm in. Put the $400 in.", outcome: "You finally cave and buy $400 worth. Let's hope it's not too late.", nextScenarioId: 3 },
+          { text: "No. I'm sticking to my guns.", outcome: "You resist. This whole thing feels like a bubble.", nextScenarioId: 99 },
+          { text: "Maybe later. I'll just watch for now.", outcome: "You'll keep watching. The pressure is mounting.", nextScenarioId: '4_B' }
+        ]
+      },
+      '4_B': {
+        text: "Another month passes. Your friend texts again. 'Dude... my $100 is $1000 now. It's not too late!!' The pressure is intense. Everyone on TikTok is talking about it.",
+        set_cash: 400,
+        set_crypto: 0,
+        set_stress: "Stressed",
+        feed: [
+          { user: "@TikTok_Invest", text: "I quit my job! Thanks 'CryptoCoin X'!" },
+          { user: "Your Friend", text: "$1000!!!!! ARE YOU IN YET??" }
+        ],
+        choices: [
+          { text: "OKAY! OKAY! I'm in! Put the $400 in!", outcome: "You buy in at the peak. This feels... risky.", nextScenarioId: 3 },
+          { text: "I missed it. It's too late now. I'm out.", outcome: "You missed the boat, but you also missed the iceberg.", nextScenarioId: 99 },
+        ]
+      },
+
+      // SCENARIO 5 (from 2B)
+      5: { 
+        text: "You held your $100 investment. A month later, the first market crash happens. Your $110 is now $20. You're annoyed, but glad you only lost $90.",
+        set_cash: 300,
+        set_crypto: 20,
+        set_stress: "Nervous",
+        feed: [{ user: "News Alert", text: "Market sees 'minor correction'..." }],
+        choices: [
+          { text: "It's so cheap! 'Buy the dip' with my $300!", outcome: "You buy $300 more at the bottom. A brave move.", nextScenarioId: 3 },
+          { text: "I'm done. Sell the $20 and walk away.", outcome: "You sell. You lost $80, but you still have $320. A lesson learned.", nextScenarioId: 99 }
+        ]
+      },
+
+      // ENDING 6 (Good)
+      6: { 
+        text: "CONGRATULATIONS!! You sell everything. You have $750 in your bank account. You made a $350 profit. You won! A month later, the market crashes. You got out at the perfect time.",
+        set_cash: 750,
+        set_crypto: 0,
+        set_stress: "Stable",
+        feed: [{ user: "You", text: "Wow. I... I actually made it." }],
+        choices: [
+          { text: "Play Again", outcome: "Let's go again!", nextScenarioId: "RESTART" }
+        ]
+      },
+
+      // SCENARIO 7 (from 3B)
+      7: { 
+        text: "You hold. Your $750 becomes $900! You're checking it every day. You're mapping out your new life. Then, a new token appears... 'Shiba INU'. It's $0.00001. TikTok is saying it will make you a billionaire.",
+        set_cash: 0,
+        set_crypto: 900,
+        feed: [
+          { user: "@SHIBA_ARMY", text: "THIS IS THE NEXT DOGECOIN! 1000x EASY! #SHIB" },
+          { user: "Your Friend", text: "Should we sell 'X' and buy 'Shiba'?" }
+        ],
+        choices: [
+          { text: "Sell all 'CryptoCoin X'. Put all $900 into Shiba INU!", outcome: "You sell 'X' and buy 100,000,000 Shiba. This is it.", nextScenarioId: 11 },
+          { text: "No, that's stupid. 'CryptoCoin X' is the safe bet. Hold.", outcome: "You're not falling for a meme. You hold 'X'.", nextScenarioId: 8 }
+        ]
+      },
+
+      // SCENARIO 8 (from 7B - The War)
+      8: { 
+        text: "You hold. You wake up to a red alert: 'RUSSIA INVADES UKRAINE. GLOBAL MARKETS IN FREEFALL.' You check your account. Your $900 is... $500. It's dropping every minute.",
+        set_cash: 0,
+        set_crypto: 500,
+        set_stress: "Panicked!",
+        feed: [
+          { user: "GLOBAL NEWS", text: "WAR IN EUROPE. MARKETS PLUMMET." },
+          { user: "Your Friend", text: "SELL!! SELL!! SELL!!" }
+        ],
+        choices: [
+          { text: "SELL! Sell everything. Get out now!", outcome: "You panic-sell. You can't watch it go to zero.", nextScenarioId: 9 },
+          { text: "It's just a dip. It will come back. HOLD.", outcome: "This is temporary. You're holding. You have to.", nextScenarioId: 12 }
+        ]
+      },
+
+      // ENDING 9 (Realistic)
+      9: { 
+        text: "You hit 'SELL'. The order goes through at $380. You stare at the number. All that time, all that stress... and you lost $20 from your phone money. You feel empty.",
+        set_cash: 380,
+        set_crypto: 0,
+        set_stress: "Empty",
+        feed: [{ user: "You", text: "... all that for nothing." }],
+        choices: [
+          { text: "Play Again", outcome: "Let's go again!", nextScenarioId: "RESTART" }
+        ]
+      },
+      
+      // SCENARIO 10 (from 3C - Moral Choice)
+      10: { 
+        text: "You're at the peak. Your portfolio is $750. Your close friend, the one who told you to invest, is in trouble. 'Dude, my car broke down, I can't get to work. Can I *please* borrow $200? I'll pay you back.'",
+        choices: [
+          { text: "Of course, man. Sending it now.", outcome: "You lend your friend $200. He's so grateful. 'You're a lifesaver, man!' Your portfolio is now $550.", nextScenarioId: '10.1' },
+          { text: "Sorry, all my money is 'tied up' right now.", outcome: "You tell him your money is locked up. He says 'I understand' but sounds cold. Your portfolio is still $750.", nextScenarioId: '10.2' }
+        ]
+      },
+      '10.1': { // FIX: Was 10.1, now a string
+        text: "You lent your friend $200. Your portfolio is $550. A week later... the invasion happens.",
+        set_cash: 0, // Cash was loaned, so it's gone from your "game" cash
+        set_crypto: 550,
+        set_stress: "Stressed",
+        feed: [
+          { user: "GLOBAL NEWS", text: "WAR IN EUROPE. MARKETS PLUMMET." },
+          { user: "Your Friend", text: "oh man... my car is fixed but... the market..." }
+        ],
+        choices: [
+          { text: "Check portfolio", outcome: "You open the app with one eye open...", nextScenarioId: 13 }
+        ]
+      },
+      '10.2': { // FIX: Was 10.2, now a string
+        text: "You told your friend 'no'. Your portfolio is still $750. A week later... the invasion happens.",
+        set_cash: 0,
+        set_crypto: 750,
+        set_stress: "Stressed",
+        feed: [
+          { user: "GLOBAL NEWS", text: "WAR IN EUROPE. MARKETS PLUMMET." },
+          { user: "Your Friend", text: "(He hasn't texted you.)" }
+        ],
+        choices: [
+          { text: "Check portfolio", outcome: "You open the app...", nextScenarioId: 8 } // Go to same crash, but with $750
+        ]
+      },
+
+      // SCENARIO 11 (from 7A - Shiba)
+      11: { 
+        text: "You did it. You sold 'X' and bought a billion 'Shiba INU' tokens. For a week, nothing happens. Then... the invasion. The 'Shiba' token, being a 'meme coin', completely collapses. It's worthless.",
+        set_cash: 0,
+        set_crypto: 50,
+        set_stress: "Defeated",
+        feed: [
+          { user: "@TikTok_Invest", text: "This is a long-term hold! Don't panic!" },
+          { user: "Your Friend", text: "I... I think I'm going to be sick." }
+        ],
+        choices: [
+          { text: "It's over. It's all gone.", outcome: "You're left with $50 and a hard lesson.", nextScenarioId: 14 }
+        ]
+      },
+
+      // ENDING 12 (Tragic)
+      12: { 
+        text: "You hold. You watch, helpless, as it drops to $300... then $200... then $110. The $400 from your phone is gone. You lost. You feel defeated.",
+        set_cash: 0,
+        set_crypto: 110,
+        set_stress: "Defeated",
+        feed: [{ user: "Your Friend", text: "I sold. I lost $300. I... I'm deleting the app." }],
+        choices: [
+          { text: "Sell what's left and give up.", outcome: "You sell for $110. A $290 loss.", nextScenarioId: '9.1' }, // Modified end
+          { text: "Hold onto the $110. Maybe one day...", outcome: "You close the app. You can't look anymore.", nextScenarioId: 12 } // Loop
+        ]
+      },
+      '9.1': {
+        text: "You sell for $110. A $290 loss. All that hope and stress for nothing. You delete the app.",
+        set_cash: 110,
+        set_crypto: 0,
+        set_stress: "Defeated", /* CHANGED from "Empty" */
+        feed: [{ user: "You", text: "Never again." }],
+        choices: [
+          { text: "Play Again", outcome: "Let's go again!", nextScenarioId: "RESTART" }
+        ]
+      },
+
+      // ENDING 13 (Moral)
+      13: {
+        text: "You check your portfolio. Your $550 is now $250. You lost hundreds, but you still have your $200 'loan' with your friend. You feel... strangely better than if you'd lost it all.",
+        set_cash: 0,
+        set_crypto: 250,
+        set_stress: "Empty",
+        feed: [{ user: "Your Friend", text: "I'll pay you back. I promise. Every dollar." }],
+        choices: [
+          { text: "It's okay. We'll figure it out.", outcome: "You lost money, but not a friend.", nextScenarioId: '9.1' }
+        ]
+      },
+
+      // ENDING 14 (Shiba)
+      14: { 
+        text: "You lost $400. You sold your phone for nothing. You chased a dream from TikTok and it cost you everything. You're left with $50 worth of a coin called 'Shiba INU'.",
+        set_cash: 0,
+        set_crypto: 50,
+        set_stress: "Defeated",
+        feed: [{ user: "You", text: "I'm an idiot." }],
+        choices: [
+          { text: "Play Again", outcome: "Let's go again!", nextScenarioId: "RESTART" }
+        ]
+      },
+
+      // ENDING 99 (Safe)
+      99: { 
+        text: "You stuck to your guns and kept your $400. You watched your friend get rich and then get wrecked. It was stressful, but your money is safe. A boring, but safe, choice.",
+        set_cash: 400,
+        set_crypto: 0,
+        set_stress: "Stable",
+        feed: [{ user: "You", text: "That was a close one." }],
+        choices: [
+          { text: "Play Again", outcome: "Let's go again!", nextScenarioId: "RESTART" }
+        ]
+      }
+    };
+
+    // --- 5. GAME ENGINE FUNCTIONS ---
+
+    function updateStats(cash, crypto) {
+      state.cash = cash;
+      state.crypto = crypto;
+      cashText.innerText = `$${cash}`;
+      cryptoText.innerText = `$${crypto}`;
+    }
+
+    function setStress(stressLabelText) {
+      state.stress = stressLabelText;
+      const stressData = stressMap[stressLabelText] || stressMap["Curious"];
+      stressLabel.innerText = stressLabelText;
+      stressEmoji.innerText = stressData.emoji;
+      stressLabel.style.color = stressData.color;
+      
+      // Update background color
+      const body = document.body;
+      // Remove all previous stress states
+      Object.keys(stressMap).forEach(key => body.classList.remove(`stress-${key.toLowerCase()}`));
+      // Add the new one
+      body.classList.add(`stress-${stressLabelText.toLowerCase().replace('!', '')}`);
+      // This uses CSS classes now, let's update the style block
+      // ... actually, a direct style is simpler and what I had. Let's fix the bug.
+      const stressColor = stressMap[state.stress] ? stressMap[state.stress].color : '#60a5fa';
+      document.body.style.backgroundColor = stressColor.replace(')', ', 0.1)').replace('rgb', 'rgba'); // This is how it was, but this is wrong.
+      
+      // --- Let's FIX the background color bug ---
+      // The old code was for RGB, but the colors are HEX.
+      let bgColor = '#f3f4f6'; // default
+      if (stressMap[stressLabelText]) {
+        // Simple hex-to-rgba converter for the background
+        let hex = stressMap[stressLabelText].color;
+        let r = parseInt(hex.slice(1, 3), 16);
+        let g = parseInt(hex.slice(3, 5), 16);
+        let b = parseInt(hex.slice(5, 7), 16);
+        bgColor = `rgba(${r}, ${g}, ${b}, 0.1)`; // 10% opacity
+      }
+      document.body.style.backgroundColor = bgColor;
+      // --- End of background color fix ---
+    }
+
+    function addNews(feedItem) {
+      const item = document.createElement('div');
+      item.className = "p-4 bg-gray-700 rounded-lg animate-pulse"; // Added pulse for new item
+      item.innerHTML = `
+        <p class="font-semibold text-sm text-pink-300">${feedItem.user}</p>
+        <p class="text-sm text-gray-300">${feedItem.text}</p>
+      `;
+      commentsFeed.prepend(item); // Add new items to the top
+      setTimeout(() => item.classList.remove('animate-pulse'), 1000);
+    }
+    
+    function addHistory(text) {
+      const item = document.createElement('div');
+      item.className = "p-2 bg-gray-700 rounded text-sm text-gray-400";
+      item.innerText = text;
+      historyList.prepend(item);
+    }
+
+    function renderScenario(scenarioId, pushToHistory = true) {
+      const scenario = gameScenarios[scenarioId];
+      if (!scenario) {
+        console.error("Scenario not found:", scenarioId);
+        return;
+      }
+      
+      // Save current state to history *before* updating
+      if (pushToHistory) {
+        state.history.push({ 
+          id: state.currentScenarioId, 
+          cash: state.cash, 
+          crypto: state.crypto, 
+          stress: state.stress 
+        });
+      }
+      state.currentScenarioId = scenarioId;
+
+      // Update state
+      let newCash = scenario.set_cash !== undefined ? scenario.set_cash : state.cash;
+      let newCrypto = scenario.set_crypto !== undefined ? scenario.set_crypto : state.crypto;
+      updateStats(newCash, newCrypto);
+      
+      if (scenario.set_stress) {
+        setStress(scenario.set_stress);
+      }
+      
+      // Update UI
+      scenarioText.innerText = scenario.text;
+      choicesContainer.innerHTML = ''; // Clear old choices
+      nextButtonContainer.classList.add('hidden'); // Hide next button
+      
+      if (scenario.feed) {
+        scenario.feed.forEach(addNews);
+      }
+
+      // Check for good ending to trigger confetti
+      if (scenarioId === 6) {
+        triggerConfetti();
+      }
+
+      // Check for bad ending to trigger rain (NEW)
+      if (scenarioId === '9.1' || scenarioId === 12 || scenarioId === 14) {
+        triggerRain();
+      }
+
+      // Create new choices
+      scenario.choices.forEach(choice => {
+        const button = document.createElement('button');
+        button.className = "btn-primary w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg border-2 border-transparent";
+        button.innerText = choice.text;
+        button.onclick = () => selectChoice(choice);
+        choicesContainer.appendChild(button);
+      });
+
+      // Update back button visibility
+      backButton.disabled = state.history.length <= 1;
+      backButton.style.opacity = backButton.disabled ? '0.5' : '1';
+    }
+
+    function selectChoice(choice) {
+      // Handle "RESTART"
+      if (choice.nextScenarioId === "RESTART") {
+        startGame();
+        return;
+      }
+
+      // Add choice to history
+      addHistory(choice.text);
+      
+      // Show outcome screen
+      scenarioText.innerText = choice.outcome;
+      choicesContainer.innerHTML = ''; // Clear choices
+      nextButtonContainer.classList.remove('hidden'); // Show next button
+      
+      // Set the "Next" button to load the next scenario
+      nextButton.onclick = () => {
+        renderScenario(choice.nextScenarioId);
+      }
+    }
+
+    function goBack() {
+      if (state.history.length <= 1) return; // Can't go back from start
+      
+      // Get the *previous* scenario ID
+      const lastScenarioState = state.history.pop(); 
+      
+      // Re-load the previous scenario
+      // --- THIS IS A FULL STATE RESTORE ---
+      state.cash = lastScenarioState.cash;
+      state.crypto = lastScenarioState.crypto;
+      state.stress = lastScenarioState.stress;
+      
+      // Re-render the restored state
+      updateStats(state.cash, state.crypto);
+      setStress(state.stress);
+      renderScenario(lastScenarioState.id, false); // false to prevent double-history
+    }
+    
+    function startGame() {
+      // --- NEW AUDIO UNLOCK ---
+      // We use the "Start" button click to reliably "prime" the audio for the browser.
+      if (bgAudio.paused) {
+        bgAudio.play().catch(() => {}); // Try to play
+        bgAudio.pause(); // and immediately pause.
+      }
+      // --- END NEW AUDIO UNLOCK ---
+
+      // Reset state
+      state = { 
+        cash: 400, 
+        crypto: 0, 
+        stress:"Curious", 
+        currentScenarioId: 0, 
+        history:[] 
+      };
+      
+      // Reset UI
+      introScreen.classList.add('hidden');
+      scenarioScreen.classList.remove('hidden');
+      updateStats(400, 0); // Use new function
+      setStress("Curious");
+      
+      // Clear logs
+      historyList.innerHTML = '';
+      commentsFeed.innerHTML = `
+        <div class="p-4 bg-gray-700 rounded-lg">
+          <p class="font-semibold text-sm text-pink-300">@WelcomeBot</p>
+          <p class="text-sm text-gray-300">The world is buzzing. What will you do?</p>
+        </div>
+      `;
+      
+      // Render first scenario
+      renderScenario(1);
+    }
+
+    // --- 6. AUDIO LOGIC ---
+    
+    // This is the new, simple function to toggle music
+    musicToggle.onclick = () => {
+      if (bgAudio.paused) {
+        // Try to play the audio
+        const playPromise = bgAudio.play();
+
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            // Playback started successfully!
+            musicToggle.innerText = 'Pause Theme';
+            musicPlaying = true;
+          }).catch((err) => {
+            // Playback failed (e.g., user hasn't clicked yet)
+            console.error("Audio Playback Error:", err);
+            musicToggle.innerText = 'Audio Failed';
+            musicPlaying = false;
+          });
+        }
+      } else {
+        // It's playing, so just pause it
+        bgAudio.pause();
+        musicToggle.innerText = 'Play Theme';
+        musicPlaying = false;
+      }
+    };
+    
+    // --- 7. ATTACH EVENT LISTENERS ---
+    startButton.onclick = startGame;
+    restartBtn.onclick = startGame;
+    backButton.onclick = goBack;
+
+    // --- 8. CONFETTI ANIMATION ---
+    // This is the new function that creates the celebration
+    function createConfettiParticle() {
+      const colors = ['#ec4899', '#4ade80', '#60a5fa', '#f59e0b', '#a78bfa', '#ffffff'];
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      confetti.style.left = `${Math.random() * 100}vw`;
+      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.animationDelay = `${Math.random() * 2}s`; // Stagger the fall
+      const size = `${Math.floor(Math.random() * 10) + 5}px`;
+      confetti.style.width = size;
+      confetti.style.height = size;
+      confetti.style.borderRadius = '50%';
+      
+      return confetti;
+    }
+
+    // This is the new function that starts the 10-second animation
+    function triggerConfetti() {
+      const container = document.getElementById('confetti-container');
+      container.innerHTML = ''; // Clear old confetti
+      
+      const particleCount = 100; // Create 100 particles
+      for (let i = 0; i < particleCount; i++) {
+        container.appendChild(createConfettiParticle());
+      }
+      
+      // Clear confetti from the DOM after 10 seconds
+      setTimeout(() => {
+        container.innerHTML = '';
+      }, 10000);
+    }
+
+    // --- 9. RAIN ANIMATION (NEW) ---
+    function createRainDrop() {
+      const rain = document.createElement('div');
+      rain.className = 'rain-drop';
+      rain.style.left = `${Math.random() * 100}vw`;
+      rain.style.animationDelay = `${Math.random() * 2}s`;
+      return rain;
+    }
+
+    function triggerRain() {
+      const container = document.getElementById('rain-container');
+      container.innerHTML = ''; // Clear old rain
+      
+      const particleCount = 100;
+      for (let i = 0; i < particleCount; i++) {
+        container.appendChild(createRainDrop());
+      }
+      
+      // Clear rain from the DOM after 10 seconds
+      setTimeout(() => {
+        container.innerHTML = '';
+      }, 10000);
+    }
+
+  </script>
+</body>
+</html>
