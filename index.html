@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Red Market - Expanded Edition</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <link rel="icon" href="icon.png" type="image/x-icon">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+    .btn-primary { transition: all 0.2s ease; text-align: left; }
+    .btn-primary:hover { background-color: #4f46e5; border-color: #c7d2fe; transform: translateY(-2px) scale(1.01); }
+    #start-button:hover { background-color: #ec4899; transform: scale(1.05); box-shadow: 0 0 20px rgba(236, 72, 153, 0.5); }
+    
+    @keyframes breathe { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+    .animate-breathe { animation: breathe 10s infinite ease-in-out; }
+    @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+    .animate-shake { animation: shake 0.5s infinite; }
+    @keyframes pulse-red { 0%, 100% { background-color: rgba(153, 27, 27, 0.1); } 50% { background-color: rgba(220, 38, 38, 0.3); } }
+    .animate-pulse-red { animation: pulse-red 2s infinite; }
+    @keyframes pulse-green { 0%, 100% { background-color: rgba(6, 78, 59, 0.1); } 50% { background-color: rgba(34, 197, 94, 0.2); } }
+    .animate-pulse-green { animation: pulse-green 2s infinite; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .slide-in { animation: slideIn 0.5s ease-out forwards; }
+    
+    #confetti-container, #rain-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 100; }
+    .confetti { position: absolute; font-size: 24px; opacity: 0; animation: confetti-fall 4s linear forwards; }
+    @keyframes confetti-fall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(360deg); opacity: 0; } }
+    .rain-drop { position: absolute; width: 2px; height: 20px; background-color: #60a5fa; opacity: 0; animation: rain-fall 2s linear infinite; }
+    @keyframes rain-fall { 0% { transform: translateY(-100px); opacity: 0.5; } 100% { transform: translateY(110vh); opacity: 0; } }
+    #scenario-img { transition: opacity 0.5s ease-in-out; }
+    #main-card { transition: all 0.5s ease; }
+  </style>
+</head>
+<body id="game-body" class="bg-gray-900 text-gray-100 flex items-center justify-center min-h-screen p-4 md:p-8 transition-colors duration-1000 ease-in-out">
+
+  <form name="game_results" method="POST" data-netlify="true" netlify-honeypot="bot-field" hidden>
+    <input type="hidden" name="form-name" value="game_results" />
+    
+    <p class="hidden">
+      <label>Don’t fill this out: <input name="bot-field"></label>
+    </p>
+
+    <input type="hidden" name="final_cash" />
+    <input type="hidden" name="final_crypto" />
+    <input type="hidden" name="final_stress" />
+    <input type="hidden" name="ending_scenario" />
+  </form>
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 w-full max-w-7xl relative z-10">
+    <aside class="md:col-span-1 bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 transition-all hover:shadow-xl">
+      <h2 class="text-2xl font-bold mb-6 text-pink-400 tracking-tight">Red Market</h2>
+      <div class="space-y-6 mb-6">
+        <div class="bg-gray-700/50 p-3 rounded-lg transition-all hover:bg-gray-700">
+          <label class="text-xs uppercase tracking-wider font-semibold text-gray-400">Cash on Hand</label>
+          <div id="cash-text" class="text-3xl font-extrabold text-gray-200 transition-all duration-500">$400</div>
+        </div>
+        <div class="bg-gray-700/50 p-3 rounded-lg transition-all hover:bg-gray-700">
+          <label class="text-xs uppercase tracking-wider font-semibold text-gray-400">Crypto Wallet</label>
+          <div id="crypto-text" class="text-3xl font-extrabold text-green-400 transition-all duration-500">$0</div>
+        </div>
+        <div class="bg-gray-700/50 p-3 rounded-lg transition-all hover:bg-gray-700">
+          <label class="text-xs uppercase tracking-wider font-semibold text-gray-400">Stress Level</label>
+          <div id="stress-text" class="text-2xl font-bold text-blue-400 flex items-center mt-1 transition-all duration-500">
+            <span id="stress-emoji" class="text-4xl mr-3 animate-bounce">🤔</span>
+            <span id="stress-label">Curious</span>
+          </div>
+        </div>
+      </div>
+      <div class="space-y-3 mb-6">
+        <button id="music-toggle" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all">Play Theme 🔊</button>
+        <div class="grid grid-cols-2 gap-2">
+            <button id="back-button" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all">Back</button>
+            <button id="restart-btn" class="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all">Restart</button>
+        </div>
+      </div>
+      <div>
+        <h3 class="font-semibold text-sm uppercase tracking-wider text-gray-400 mb-2">History</h3>
+        <div id="history-list" class="h-40 overflow-y-auto space-y-2 p-2 bg-gray-900/50 rounded-md text-xs border border-gray-700 scrollbar-thin scrollbar-thumb-gray-600"></div>
+      </div>
+    </aside>
+
+    <main id="main-card" class="md:col-span-2 bg-gray-800 p-1 rounded-2xl shadow-2xl border border-gray-700 flex flex-col overflow-hidden relative transition-all duration-500">
+      <div id="intro-screen" class="flex flex-col h-full relative">
+        <div class="absolute inset-0 z-0">
+            <img src="intro_bg.png" alt="Intro" class="w-full h-full object-cover opacity-40 animate-breathe">
+            <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/80 to-transparent"></div>
+        </div>
+        <div class="relative z-10 text-center p-8 flex flex-col items-center justify-center h-full slide-in">
+            <div class="mb-6 text-6xl animate-bounce">📉</div>
+            <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-violet-500 mb-2 drop-shadow-lg">Red Market</h1>
+            <h2 class="text-2xl font-semibold text-gray-300 mb-6 opacity-80"><i><u>A Trading Simulation by amenabidii</i></u></h2><br>
+            <p class="text-lg text-gray-200 mb-8 max-w-lg leading-relaxed drop-shadow-md font-medium">
+            In 2020, I sold my phone for $400 and put it all into crypto. I thought I was a genius. Then the world fell apart. <br><br>
+            Can you survive the financial and emotional crash better than I did?
+            </p>
+            <button id="start-button" class="bg-gradient-to-r from-pink-600 to-violet-600 text-white font-bold py-4 px-10 text-xl rounded-xl shadow-lg transition-all transform hover:scale-105 hover:shadow-pink-500/50 animate-pulse">Start Simulation</button>
+        </div>
+      </div>
+
+      <div id="scenario-screen" class="hidden w-full h-full flex flex-col relative">
+        <div class="w-full h-64 bg-gray-900 relative overflow-hidden group shrink-0">
+            <img id="scenario-img" src="" alt="Scenario Mood" class="w-full h-full object-cover opacity-90 transition-transform duration-700 animate-breathe">
+            <div class="absolute inset-0 bg-gradient-to-t from-gray-800 to-transparent"></div>
+        </div>
+        <div id="scenario-content" class="flex-grow flex flex-col items-center p-6 text-center overflow-y-auto">
+          <p id="scenario-text" class="text-xl font-medium text-gray-100 leading-relaxed mb-6 slide-in"></p>
+          <div id="choices-container" class="w-full max-w-lg space-y-3 slide-in" style="animation-delay: 0.2s;"></div>
+          <div id="next-button-container" class="hidden w-full max-w-md mt-6 pb-6 slide-in">
+             <button id="next-button" class="btn-primary w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg border-2 border-indigo-500/50 text-center justify-center">Continue →</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="md:col-span-1 bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex flex-col">
+      <h2 class="text-xl font-bold mb-4 text-pink-400 flex items-center gap-2"><span>🔔</span> Social Feed</h2>
+      <div id="comments-feed" class="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-600">
+        <div class="p-3 bg-gray-700/50 rounded-lg border-l-4 border-pink-500">
+          <p class="font-bold text-xs text-pink-300 mb-1">@System</p>
+          <p class="text-xs text-gray-300">Welcome to the simulation. Good luck.</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div id="confetti-container"></div>
+  <div id="rain-container"></div>
+  <audio id="bg-audio" loop src="scott-buckley-moonlight(chosic.com).mp3"></audio>
+
+  <script>
+    // --- 1. ELEMENTS ---
+    const startButton = document.getElementById('start-button');
+    const introScreen = document.getElementById('intro-screen');
+    const scenarioScreen = document.getElementById('scenario-screen');
+    const scenarioImg = document.getElementById('scenario-img'); 
+    const mainCard = document.getElementById('main-card');
+    const cashText = document.getElementById('cash-text');
+    const cryptoText = document.getElementById('crypto-text');
+    const stressLabel = document.getElementById('stress-label');
+    const stressEmoji = document.getElementById('stress-emoji');
+    const scenarioText = document.getElementById('scenario-text');
+    const choicesContainer = document.getElementById('choices-container');
+    const nextButtonContainer = document.getElementById('next-button-container');
+    const nextButton = document.getElementById('next-button');
+    const commentsFeed = document.getElementById('comments-feed');
+    const historyList = document.getElementById('history-list');
+    const musicToggle = document.getElementById('music-toggle');
+    const backButton = document.getElementById('back-button');
+    const restartBtn = document.getElementById('restart-btn');
+    const bgAudio = document.getElementById('bg-audio');
+
+    // --- 2. STATE ---
+    let state = { cash: 400, crypto: 0, stress:"Curious", currentScenarioId: 0, history:[] };
+    
+    // --- 3. SCENARIOS & CONFIG ---
+    const stressMap = {
+      "Curious": { emoji: "🤔", color: "#60a5fa" },
+      "Cautious": { emoji: "🧐", color: "#93c5fd" },
+      "Nervous": { emoji: "😬", color: "#fcd34d" },
+      "FOMO": { emoji: "😟", color: "#facc15" },
+      "Stressed": { emoji: "😫", color: "#f59e0b" },
+      "Excited!": { emoji: "🤩", color: "#4ade80" },
+      "Panicked!": { emoji: "😱", color: "#f87171" },
+      "Empty": { emoji: "😑", color: "#9ca3af" },
+      "Defeated": { emoji: "😭", color: "#ef4444" },
+      "Stable": { emoji: "😌", color: "#a78bfa" }
+    };
+
+    const gameScenarios = {
+      1: { 
+        text: "It's 2020. You just sold your old phone for $400. It's the only cash you have. Your best friend sends you a frantic text: \"Dude, you HAVE to get in on 'CryptoCoin X'. I just made $200 in two days! It's mooning!\"",
+        image: "scenario_1.png",
+        feed: [{ user: "@CryptoKing", text: "CryptoCoin X is the future! #ToTheMoon" }],
+        choices: [
+          { text: "I'm cautious. I'll put in $100 to test the waters, but I'm keeping the rest safe.", outcome: "You dip your toes in. Smart? Or cowardly? You keep $300 safe.", nextScenarioId: 2 },
+          { text: "Fortune favors the bold! I'm transferring all $400 immediately. I can't miss this rocket.", outcome: "You throw everything you have at it. High risk, high reward.", nextScenarioId: 3 },
+          { text: "No way. This sounds like a classic pyramid scheme. I'm keeping my cash.", outcome: "You keep your cash. Boring, but safe.", nextScenarioId: 4 }
+        ]
+      },
+      2: { 
+        text: "You invested $100. The next morning, you check the app... it's up 10%! Your $100 is now $110. You still have $300 cash safe in your pocket, but you feel like you're missing out on bigger gains.",
+        image: "scenario_2.png",
+        set_cash: 300, set_crypto: 110, set_stress: "Cautious",
+        feed: [{ user: "Your Friend", text: "See? Told you! Imagine if you put it all in!" }],
+        choices: [
+          { text: "My friend is right. It works! I'm putting the remaining $300 in now.", outcome: "You're fully committed now. No turning back.", nextScenarioId: 3 },
+          { text: "Nice, but I'm not greedy. I'll just hold this $110 and keep my cash safe.", outcome: "You wait. Prudence is a virtue... right?", nextScenarioId: 5 }
+        ]
+      },
+      3: { 
+        text: "You're all in ($400). A week later, the market goes absolutely wild. You check your portfolio... your $400 is now worth $750! You've nearly doubled your money in a week. You feel like a financial genius.",
+        image: "scenario_3.png",
+        set_cash: 0, set_crypto: 750, set_stress: "Excited!",
+        feed: [{ user: "@TikTok_Invest", text: "I quit my job! Crypto is easy money! 🚀" }],
+        choices: [
+          { text: "This is too good to be true. I'm selling everything now to lock in that $750 profit.", outcome: "You take the money and run. Smart move.", nextScenarioId: 6 },
+          { text: "Diamond Hands! I'm not selling until I can buy a Lamborghini. HODL!", outcome: "You refuse to sell. You're dreaming of millions.", nextScenarioId: 7 },
+          { text: "I need to learn more. Buy a 'Secret Crypto Strategy' course for $50.", outcome: "You spend $50 cash (on credit) to learn 'secrets' from a guru.", nextScenarioId: '3_SCAM' }
+        ]
+      },
+      '3_SCAM': { text: "You bought the course. It's just a PDF saying 'Buy Low, Sell High'. You got scammed.", image: "scenario_3_scam.png", set_cash: -50, set_stress: "Stressed", feed: [{ user: "@ScamAlert", text: "Don't buy courses!" }], choices: [ { text: "Ugh, I feel stupid.", outcome: "Lesson learned.", nextScenarioId: 7 } ] },
+      4: { 
+        text: "You didn't invest. A month later, your friend texts you: His $100 is now $200. You feel a knot in your stomach seeing his gains.",
+        image: "scenario_4.png",
+        set_cash: 400, set_crypto: 0, set_stress: "FOMO",
+        feed: [{ user: "Your Friend", text: "My $100 is $200 now! You really missed out." }],
+        choices: [
+          { text: "I can't take it anymore! I'm buying in now with my $400!", outcome: "You buy in late. Very risky.", nextScenarioId: 3 },
+          { text: "No. It's a bubble. I'm sticking to my guns.", outcome: "You are stubborn. Or smart.", nextScenarioId: 99 },
+          { text: "Wait... everyone on TikTok is posting videos of new cars...", outcome: "You hesitate...", nextScenarioId: '4_B' }
+        ]
+      },
+      '4_B': { text: "TikTok is exploding. 16-year-olds are buying Rolexes. You feel like the only person not making free money.", image: "scenario_4b.png", set_stress: "Stressed", feed: [{ user: "@Influencer", text: "LAMBO SOON! 🚀" }], choices: [ { text: "BUY! BUY! TAKE MY MONEY!", outcome: "You buy the absolute top.", nextScenarioId: 3 }, { text: "I missed it. I'm out.", outcome: "Painful, but safe.", nextScenarioId: 99 } ] },
+      5: { text: "Market drops. Your $110 is now $20.", image: "scenario_5.png", set_cash: 300, set_crypto: 20, set_stress: "Nervous", feed: [{ user: "NewsBot", text: "Market dips 40%." }], choices: [ { text: "Buy the Dip!", outcome: "You double down.", nextScenarioId: 3 }, { text: "Sell and walk away.", outcome: "You cut losses.", nextScenarioId: 99 } ] },
+      6: { text: "CONGRATULATIONS!! You sold at the absolute top. You have $750 cash. A month later, the market crashes to zero.", image: "scenario_6.png", set_cash: 750, set_crypto: 0, set_stress: "Stable", choices: [ { text: "Play Again", outcome: "Restarting...", nextScenarioId: "RESTART" } ] },
+      7: { text: "Portfolio hits $900. CRASH. Laptop dies. Repairs cost $150.", image: "scenario_7.png", set_crypto: 900, feed: [{ user: "@TechSupport", text: "Needs immediate repair." }], choices: [ { text: "Pay $150 (Force Cash/Debt)", outcome: "You go into debt.", nextScenarioId: '7_FORCED' } ] },
+      '7_FORCED': { text: "You paid. Account empty. Desperate for crypto to moon.", image: "scenario_7_forced.png", set_cash: -150, set_stress: "Stressed", choices: [ { text: "Check charts...", outcome: "Praying for green candles.", nextScenarioId: '7_SHIBA' } ] },
+      '7_SHIBA': { text: "New token: 'Shiba INU'. TikTok says 1000x.", image: "scenario_7_shiba.png", feed: [{ user: "@ShibaArmy", text: "DOGE KILLER! BUY NOW!" }], choices: [ { text: "Swap everything to Shiba!", outcome: "Gambling it all.", nextScenarioId: 11 }, { text: "Stick with original investment.", outcome: "Stay the course.", nextScenarioId: 8 } ] },
+      8: { text: "RUSSIA INVADES UKRAINE. MARKETS FREEFALL. Your $900 melts to $500.", image: "scenario_8.png", set_crypto: 500, set_stress: "Panicked!", feed: [{ user: "GLOBAL NEWS", text: "PANIC SELLING." }], choices: [ { text: "SELL EVERYTHING!", outcome: "Panic sold.", nextScenarioId: 9 }, { text: "I'LL HOLD.", outcome: "Brave... or stupid?", nextScenarioId: 12 } ] },
+      9: { text: "You sold. Network congested. You got $380. After repairs, you have $230 left. You lost money.", image: "scenario_9.png", set_cash: 230, set_crypto: 0, set_stress: "Empty", choices: [ { text: "Play Again", outcome: "Restarting...", nextScenarioId: "RESTART" } ] },
+      10: { text: "You're rich ($750). Friend needs $200 for car repair.", image: "scenario_10.png", choices: [ { text: "Help friend (Sell $200)", outcome: "You're a good friend.", nextScenarioId: '10_GOOD' }, { text: "Sorry, money tied up.", outcome: "Prioritizing profits.", nextScenarioId: 8 } ] },
+      '10_GOOD': { text: "You helped. Portfolio smaller ($550). Crash happens.", set_cash: 0, set_crypto: 550, outcome: "Crash coming...", nextScenarioId: 13 },
+      11: { text: "Shiba Rug Pull. Value $0.00.", image: "scenario_11.png", set_crypto: 0, set_stress: "Defeated", choices: [ { text: "I'm broke.", outcome: "Broke and in debt.", nextScenarioId: 14 } ] },
+      12: { text: "Held. Dropped to $110. Need date money.", image: "scenario_12.png", set_crypto: 110, set_stress: "Defeated", choices: [ { text: "Sell for date money.", outcome: "Journey over.", nextScenarioId: '12_FINAL' } ] },
+      '12_FINAL': { text: "Sold for $110. Spent $60. $50 left.", image: "scenario_12_final.png", set_cash: 50, set_crypto: 0, set_stress: "Defeated", choices: [ { text: "Play Again", outcome: "Restarting...", nextScenarioId: "RESTART" } ] },
+      13: { text: "Market crashed. But friend pays you back $200.", image: "scenario_13.png", set_cash: 200, set_crypto: 250, set_stress: "Stable", choices: [ { text: "At least I have my friend.", outcome: "Lost money, kept values.", nextScenarioId: '9.1' } ] },
+      14: { text: "Total loss. In debt.", image: "scenario_14.png", set_cash: -150, set_crypto: 0, set_stress: "Defeated", choices: [ { text: "Play Again", outcome: "Restarting...", nextScenarioId: "RESTART" } ] },
+      '9.1': { text: "Walked away with less money, but learned a lesson.", image: "scenario_9.png", set_cash: 450, set_crypto: 0, set_stress: "Stable", choices: [ { text: "Play Again", outcome: "Restarting...", nextScenarioId: "RESTART" } ] },
+      99: { text: "You kept your cash. Boring but safe.", image: "scenario_99.png", set_cash: 400, set_crypto: 0, set_stress: "Stable", choices: [ { text: "Play Again", outcome: "Restarting...", nextScenarioId: "RESTART" } ] }
+    };
+
+    // --- 4. ENGINE ---
+    function updateStats(cash, crypto) {
+      state.cash = cash; state.crypto = crypto;
+      cashText.innerText = `$${cash}`; cryptoText.innerText = `$${crypto}`;
+      cashText.style.color = cash < 0 ? '#ef4444' : '#e5e7eb';
+    }
+
+    function setStress(stressLabelText) {
+      state.stress = stressLabelText;
+      const data = stressMap[stressLabelText] || stressMap["Curious"];
+      stressLabel.innerText = stressLabelText;
+      stressEmoji.innerText = data.emoji;
+      stressLabel.style.color = data.color;
+      
+      const body = document.body;
+      const mainCard = document.getElementById('main-card');
+      body.className = "bg-gray-900 text-gray-100 flex items-center justify-center min-h-screen p-4 md:p-8 transition-colors duration-1000 ease-in-out";
+      mainCard.classList.remove('animate-shake');
+      
+      if (stressLabelText === "Excited!") body.classList.add("animate-pulse-green");
+      else if (stressLabelText === "Panicked!") { body.classList.add("animate-pulse-red"); mainCard.classList.add("animate-shake"); }
+      else if (stressLabelText === "Defeated" || stressLabelText === "Empty") body.style.filter = "grayscale(0.8)";
+      else body.style.filter = "none";
+    }
+    
+    // --- 5. SUBMISSION LOGIC (REQUESTED FUNCTIONS) ---
+    function submitFinalResults() {
+      // 1. Populate the HTML form fields (as requested)
+      const form = document.forms["game_results"];
+      form.querySelector('input[name="final_cash"]').value = state.cash;
+      form.querySelector('input[name="final_crypto"]').value = state.crypto;
+      form.querySelector('input[name="final_stress"]').value = state.stress;
+      form.querySelector('input[name="ending_scenario"]').value = state.currentScenarioId;
+      
+      // 2. Submit via Fetch (better UX than form.submit() which reloads page)
+      // We construct FormData from the form element we just populated
+      fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams(new FormData(form)).toString()
+      })
+      .then(() => console.log("✅ Data sent to Netlify successfully"))
+      .catch(error => console.error("❌ Data collection failed:", error));
+    }
+
+    function renderScenario(scenarioId, pushToHistory = true) {
+      const scenario = gameScenarios[scenarioId];
+      if (!scenario) return;
+      
+      if (pushToHistory) state.history.push({ ...state, id: state.currentScenarioId });
+      state.currentScenarioId = scenarioId;
+
+      let newCash = scenario.set_cash !== undefined ? scenario.set_cash : state.cash;
+      let newCrypto = scenario.set_crypto !== undefined ? scenario.set_crypto : state.crypto;
+      updateStats(newCash, newCrypto);
+      if (scenario.set_stress) setStress(scenario.set_stress);
+      
+      scenarioText.innerText = scenario.text;
+      choicesContainer.innerHTML = '';
+      nextButtonContainer.classList.add('hidden');
+      
+      if (scenario.image) { scenarioImg.src = scenario.image; scenarioImg.classList.remove('opacity-0'); } 
+      else { scenarioImg.classList.add('opacity-0'); }
+      if (scenario.feed) scenario.feed.forEach(addNews);
+      if (scenarioId === 6) triggerConfetti();
+      if (scenario.set_stress === "Defeated" || scenario.set_stress === "Empty") triggerRain();
+
+      // --- 3. AUTO-SUBMIT TRIGGER ---
+      // This checks if the *current* scenario is an ending, and fires the submission
+      // Using IDs for all endings: 6(Win), 9(Loss), 14(Broke), 12_FINAL, 9.1, 99(Safe)
+      const endIds = [6, 9, 14, '12_FINAL', '9.1', 99];
+      if (endIds.includes(scenarioId)) {
+        submitFinalResults();
+      }
+
+      scenario.choices.forEach(choice => {
+        const button = document.createElement('button');
+        button.className = "btn-primary w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg border-2 border-indigo-500/50 text-sm md:text-base slide-in";
+        button.innerText = choice.text;
+        button.onclick = () => selectChoice(choice);
+        choicesContainer.appendChild(button);
+      });
+      
+      backButton.disabled = state.history.length <= 1;
+      backButton.style.opacity = backButton.disabled ? '0.5' : '1';
+    }
+
+    function addNews(feedItem) {
+      const item = document.createElement('div');
+      item.className = "p-3 bg-gray-700/50 rounded-lg border-l-4 border-pink-500 animate-pulse text-xs slide-in";
+      item.innerHTML = `<p class="font-bold text-pink-300 mb-1">${feedItem.user}</p><p class="text-gray-300">${feedItem.text}</p>`;
+      commentsFeed.prepend(item);
+      setTimeout(() => item.classList.remove('animate-pulse'), 1000);
+    }
+    
+    function addHistory(text) {
+      const item = document.createElement('div');
+      item.className = "p-2 bg-gray-700/50 border-b border-gray-600 last:border-0 slide-in";
+      item.innerText = "> " + text;
+      historyList.prepend(item);
+    }
+
+    function selectChoice(choice) {
+      if (choice.nextScenarioId === "RESTART") { startGame(); return; }
+      addHistory(choice.text);
+      scenarioText.innerText = choice.outcome;
+      choicesContainer.innerHTML = '';
+      nextButtonContainer.classList.remove('hidden');
+      nextButton.onclick = () => renderScenario(choice.nextScenarioId);
+    }
+
+    function goBack() {
+      if (state.history.length <= 1) return;
+      const lastState = state.history.pop();
+      state.cash = lastState.cash; state.crypto = lastState.crypto; state.stress = lastState.stress;
+      updateStats(state.cash, state.crypto);
+      setStress(state.stress);
+      renderScenario(lastState.id, false);
+    }
+    
+    function startGame() {
+      if (bgAudio.paused) { 
+        bgAudio.volume = 0.5;
+        bgAudio.play().catch(e => console.log("Audio blocked:", e)); 
+      }
+      state = { cash: 400, crypto: 0, stress:"Curious", currentScenarioId: 0, history:[] };
+      document.getElementById('intro-screen').classList.add('hidden');
+      document.getElementById('scenario-screen').classList.remove('hidden');
+      updateStats(400, 0); setStress("Curious");
+      historyList.innerHTML = '';
+      commentsFeed.innerHTML = ''; 
+      document.getElementById('confetti-container').innerHTML = '';
+      document.getElementById('rain-container').innerHTML = '';
+      renderScenario(1);
+    }
+
+    // --- UTILS ---
+    musicToggle.onclick = () => {
+      const bgAudio = document.getElementById('bg-audio');
+      if (bgAudio.paused) { bgAudio.play(); musicToggle.innerText = 'Pause Theme 🔇'; } 
+      else { bgAudio.pause(); musicToggle.innerText = 'Play Theme 🔊'; }
+    };
+    
+    function createConfettiParticle() {
+      const emojis = ['💰', '🚀', '🎉', '💎', '💸', '📈'];
+      const c = document.createElement('div'); c.className = 'confetti'; c.innerText = emojis[Math.floor(Math.random() * emojis.length)]; c.style.left = Math.random() * 100 + 'vw'; c.style.fontSize = (Math.random() * 20 + 20) + 'px'; c.style.animationDuration = (Math.random() * 3 + 3) + 's'; c.style.animationDelay = Math.random() * 5 + 's'; return c;
+    }
+    function triggerConfetti() { const cont = document.getElementById('confetti-container'); cont.innerHTML = ''; for(let i=0; i<300; i++) cont.appendChild(createConfettiParticle()); setTimeout(()=>cont.innerHTML='', 15000); }
+    function triggerRain() { const cont = document.getElementById('rain-container'); cont.innerHTML = ''; for(let i=0; i<200; i++) { const r = document.createElement('div'); r.className = 'rain-drop'; r.style.left = Math.random() * 100 + 'vw'; r.style.animationDelay = Math.random() * 2 + 's'; r.style.height = (Math.random() * 20 + 10) + 'px'; cont.appendChild(r); } setTimeout(()=>cont.innerHTML='', 10000); }
+
+    startButton.onclick = startGame;
+    restartBtn.onclick = startGame;
+    backButton.onclick = goBack;
+  </script>
+</body>
+</html>
